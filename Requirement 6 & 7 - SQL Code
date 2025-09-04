@@ -1,0 +1,62 @@
+-- Check for remaining duplicates in Feed-1
+SELECT COUNT(*) AS remaining_duplicates
+FROM (
+    SELECT 1 FROM `Feed-1`
+    GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`
+    HAVING COUNT(*) > 1
+) AS duplicates_check;
+
+-- Check for remaining duplicates in Feed-2
+SELECT COUNT(*) AS remaining_duplicates
+FROM (
+    SELECT 1 FROM `Feed-2`
+    GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`
+    HAVING COUNT(*) > 1
+) AS duplicates_check;
+
+-- Check for remaining duplicates in Feed-3
+SELECT COUNT(*) AS remaining_duplicates
+FROM (
+    SELECT 1 FROM `Feed-3`
+    GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`, `column_16`, `column_17`, `column_18`, `column_19`, `column_20`
+    HAVING COUNT(*) > 1
+) AS duplicates_check;
+
+-- Create temporary table for common columns from Feed-2 & Feed-3
+CREATE TEMPORARY TABLE `common_feeds_temp` (
+    `column_1` INT,
+    `column_2` INT,
+    `column_3` INT,
+    `column_4` INT,
+    `column_5` INT,
+    `column_6` INT,
+    `column_7` INT,
+    `column_8` INT,
+    `column_9` INT,
+    `column_10` INT
+);
+
+-- Insert common columns from Feed-2
+INSERT INTO `common_feeds_temp`
+SELECT `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10` FROM `Feed-2`;
+
+-- Insert common columns from Feed-3
+INSERT INTO `common_feeds_temp`
+SELECT `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10` FROM `Feed-3`;
+
+-- Find records in the combined data that are NOT in Feed-1
+SELECT t1.*
+FROM `common_feeds_temp` AS t1
+LEFT JOIN `Feed-1` AS t2 ON
+    t1.column_1 = t2.column_1 AND t1.column_2 = t2.column_2 AND t1.column_3 = t2.column_3 AND
+    t1.column_4 = t2.column_4 AND t1.column_5 = t2.column_5 AND t1.column_6 = t2.column_6 AND
+    t1.column_7 = t2.column_7 AND t1.column_8 = t2.column_8 AND t1.column_9 = t2.column_9 AND
+    t1.column_10 = t2.column_10
+WHERE t2.column_1 IS NULL
+INTO OUTFILE 'comparison_results.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n';
+
+-- Clean up the temporary table
+DROP TEMPORARY TABLE `common_feeds_temp`;
