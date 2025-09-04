@@ -1,0 +1,47 @@
+-- Export duplicates from Feed-1 to a file
+SELECT *
+FROM `Feed-1`
+GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`
+HAVING COUNT(*) > 1
+INTO OUTFILE 'duplicates_Feed-1.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n';
+
+-- Export duplicates from Feed-2 to a file
+SELECT *
+FROM `Feed-2`
+GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`
+HAVING COUNT(*) > 1
+INTO OUTFILE 'duplicates_Feed-2.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n';
+
+-- Export duplicates from Feed-3 to a file
+SELECT *
+FROM `Feed-3`
+GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`, `column_16`, `column_17`, `column_18`, `column_19`, `column_20`
+HAVING COUNT(*) > 1
+INTO OUTFILE 'duplicates_Feed-3.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n';
+
+-- For Feed-1
+CREATE TEMPORARY TABLE `temp_feed_1` AS SELECT DISTINCT * FROM `Feed-1`;
+TRUNCATE TABLE `Feed-1`;
+INSERT INTO `Feed-1` SELECT * FROM `temp_feed_1`;
+DROP TEMPORARY TABLE `temp_feed_1`;
+
+-- For Feed-2
+CREATE TEMPORARY TABLE `temp_feed_2` AS SELECT DISTINCT * FROM `Feed-2`;
+TRUNCATE TABLE `Feed-2`;
+INSERT INTO `Feed-2` SELECT * FROM `temp_feed_2`;
+DROP TEMPORARY TABLE `temp_feed_2`;
+
+-- For Feed-3
+CREATE TEMPORARY TABLE `temp_feed_3` AS SELECT DISTINCT * FROM `Feed-3`;
+TRUNCATE TABLE `Feed-3`;
+INSERT INTO `Feed-3` SELECT * FROM `temp_feed_3`;
+DROP TEMPORARY TABLE `temp_feed_3`;
