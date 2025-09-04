@@ -1,0 +1,54 @@
+-- Create table for Feed-1 and insert random data (10 columns, 10 rows)
+DROP TABLE IF EXISTS `Feed-1`;
+CREATE TABLE `Feed-1` (
+    `column_1` INT,
+    `column_2` INT,
+    `column_3` INT,
+    `column_4` INT,
+    `column_5` INT,
+    `column_6` INT,
+    `column_7` INT,
+    `column_8` INT,
+    `column_9` INT,
+    `column_10` INT
+);
+
+INSERT INTO `Feed-1`
+SELECT
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000),
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000)
+FROM information_schema.tables LIMIT 10;
+
+
+-- Create table for Feed-2 and insert random data (15 columns, 15 rows)
+DROP TABLE IF EXISTS `Feed-2`;
+CREATE TABLE `Feed-2` (
+    `column_1` INT, `column_2` INT, `column_3` INT, `column_4` INT, `column_5` INT,
+    `column_6` INT, `column_7` INT, `column_8` INT, `column_9` INT, `column_10` INT,
+    `column_11` INT, `column_12` INT, `column_13` INT, `column_14` INT, `column_15` INT
+);
+
+INSERT INTO `Feed-2`
+SELECT
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000),
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000),
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000)
+FROM information_schema.tables LIMIT 15;
+
+
+-- Create table for Feed-3 and insert random data (20 columns, 20 rows)
+DROP TABLE IF EXISTS `Feed-3`;
+CREATE TABLE `Feed-3` (
+    `column_1` INT, `column_2` INT, `column_3` INT, `column_4` INT, `column_5` INT,
+    `column_6` INT, `column_7` INT, `column_8` INT, `column_9` INT, `column_10` INT,
+    `column_11` INT, `column_12` INT, `column_13` INT, `column_14` INT, `column_15` INT,
+    `column_16` INT, `column_17` INT, `column_18` INT, `column_19` INT, `column_20` INT
+);
+
+INSERT INTO `Feed-3`
+SELECT
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000),
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000),
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000),
+    FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000), FLOOR(RAND() * 1000)
+FROM information_schema.tables LIMIT 20;
