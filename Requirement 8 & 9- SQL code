@@ -1,0 +1,249 @@
+DELIMITER $$
+
+CREATE PROCEDURE create_test_data(
+    IN target_table VARCHAR(255),
+    IN column_count INT,
+    IN row_count INT
+)
+BEGIN
+    DECLARE i INT DEFAULT 0;
+    DECLARE j INT DEFAULT 0;
+    DECLARE create_sql TEXT;
+    DECLARE insert_template TEXT;
+    DECLARE column_list TEXT DEFAULT '';
+    DECLARE value_list TEXT DEFAULT '';
+
+    -- Drop table if it exists
+    SET @drop_sql = CONCAT('DROP TABLE IF EXISTS ', target_table);
+    PREPARE stmt FROM @drop_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    -- Create dynamic table schema
+    SET create_sql = CONCAT('CREATE TABLE ', target_table, ' (');
+    SET i = 1;
+    WHILE i <= column_count DO
+        SET create_sql = CONCAT(create_sql, 'column_', i, ' VARCHAR(255)');
+        IF i < column_count THEN
+            SET create_sql = CONCAT(create_sql, ', ');
+        END IF;
+        SET i = i + 1;
+    END WHILE;
+    SET create_sql = CONCAT(create_sql, ')');
+
+    PREPARE stmt FROM create_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    -- Build column and value lists for insertion
+    SET i = 1;
+    WHILE i <= column_count DO
+        SET column_list = CONCAT(column_list, 'column_', i);
+        SET value_list = CONCAT(value_list, 'MD5(RAND())');
+        IF i < column_count THEN
+            SET column_list = CONCAT(column_list, ', ');
+            SET value_list = CONCAT(value_list, ', ');
+        END IF;
+        SET i = i + 1;
+    END WHILE;
+    
+    SET insert_template = CONCAT('INSERT INTO ', target_table, ' (', column_list, ') VALUES (', value_list, ')');
+
+    -- Populate the table with dynamic rows
+    SET j = 1;
+    WHILE j <= row_count DO
+        PREPARE stmt FROM insert_template;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        SET j = j + 1;
+    END WHILE;
+
+    -- Add one duplicate row
+    IF row_count > 0 THEN
+        SET @duplicate_insert = CONCAT(
+            'INSERT INTO ', target_table, ' (', column_list, ') ',
+            'SELECT ', column_list, ' FROM ', target_table, ' LIMIT 1'
+        );
+        PREPARE stmt FROM @duplicate_insert;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+
+    SELECT CONCAT('Table ', target_table, ' created with ', row_count, ' rows and ', column_count, ' columns.') AS status_message;
+END$$
+
+---
+
+CREATE PROCEDURE find_and_log_duplicates(IN source_table VARCHAR(255))
+BEGIN
+    DECLARE all_columns TEXT;
+    
+    -- Get all column names for the dynamic query
+    SELECT GROUP_CONCAT(COLUMN_NAME) INTO all_columns
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = source_table;
+
+    SET @duplicate_query = CONCAT(
+        'INSERT INTO duplicates (table_name_source, duplicate_data, count_of_duplicates) ',
+        'SELECT ''', source_table, ''', JSON_OBJECT(',
+        (SELECT GROUP_CONCAT(CONCAT("'", COLUMN_NAME, "', ", COLUMN_NAME)) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = source_table),
+        '), COUNT(*) FROM ', source_table, ' GROUP BY ', all_columns, ' HAVING COUNT(*) > 1'
+    );
+    
+    PREPARE stmt FROM @duplicate_query;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    SELECT CONCAT('Duplicate entries from ', source_table, ' have been logged.') AS status_message;
+END$$
+
+---
+
+CREATE PROCEDURE remove_duplicates_from_table(IN source_table VARCHAR(255))
+BEGIN
+    SET @temp_create = CONCAT('CREATE TABLE temp_unique LIKE ', source_table);
+    PREPARE stmt FROM @temp_create;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    SET @insert_unique = CONCAT('INSERT INTO temp_unique SELECT DISTINCT * FROM ', source_table);
+    PREPARE stmt FROM @insert_unique;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    SET @truncate_table = CONCAT('TRUNCATE TABLE ', source_table);
+    PREPARE stmt FROM @truncate_table;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    SET @repopulate_table = CONCAT('INSERT INTO ', source_table, ' SELECT * FROM temp_unique');
+    PREPARE stmt FROM @repopulate_table;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    
+    DROP TABLE temp_unique;
+    
+    SELECT CONCAT('All duplicates have been successfully removed from ', source_table, '.') AS status_message;
+END$$
+
+---
+
+CREATE PROCEDURE check_for_duplicates(IN table_name_check VARCHAR(255))
+BEGIN
+    DECLARE unique_cols TEXT;
+    DECLARE duplicate_records INT;
+    
+    SELECT GROUP_CONCAT(COLUMN_NAME) INTO unique_cols
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = table_name_check;
+    
+    SET @check_sql = CONCAT(
+        'SELECT COUNT(*) INTO @dupe_count FROM (',
+        'SELECT COUNT(*) FROM ', table_name_check, ' GROUP BY ', unique_cols, ' HAVING COUNT(*) > 1) AS temp_dupes'
+    );
+    PREPARE stmt FROM @check_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    
+    SET duplicate_records = @dupe_count;
+    
+    IF duplicate_records = 0 THEN
+        SELECT CONCAT('SUCCESS: Table ', table_name_check, ' contains no duplicates.') AS result_status;
+    ELSE
+        SELECT CONCAT('FAILURE: Found ', duplicate_records, ' sets of duplicate records in ', table_name_check, '.') AS result_status;
+    END IF;
+END$$
+
+---
+
+CREATE PROCEDURE compare_data_feeds(
+    IN feed_a_name VARCHAR(255),
+    IN feed_b_name VARCHAR(255)
+)
+BEGIN
+    DECLARE col_a TEXT;
+    DECLARE col_b TEXT;
+    
+    -- Clear previous results
+    DELETE FROM comparison_results WHERE source_feed = feed_a_name AND target_feed = feed_b_name;
+
+    -- Find records in A but not B
+    SET @a_only_sql = CONCAT(
+        'INSERT INTO comparison_results (source_feed, target_feed, record_data, comparison_status) ',
+        'SELECT ''', feed_a_name, ''', ''', feed_b_name, ''', JSON_OBJECT(',
+        (SELECT GROUP_CONCAT(CONCAT("'", COLUMN_NAME, "', s.", COLUMN_NAME)) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = feed_a_name),
+        '), ''In source feed only'' ',
+        'FROM ', feed_a_name, ' s LEFT JOIN ', feed_b_name, ' t ON s.column_1 = t.column_1 WHERE t.column_1 IS NULL'
+    );
+    PREPARE stmt FROM @a_only_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    -- Find records in B but not A
+    SET @b_only_sql = CONCAT(
+        'INSERT INTO comparison_results (source_feed, target_feed, record_data, comparison_status) ',
+        'SELECT ''', feed_a_name, ''', ''', feed_b_name, ''', JSON_OBJECT(',
+        (SELECT GROUP_CONCAT(CONCAT("'", COLUMN_NAME, "', t.", COLUMN_NAME)) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = feed_b_name),
+        '), ''In target feed only'' ',
+        'FROM ', feed_b_name, ' t LEFT JOIN ', feed_a_name, ' s ON t.column_1 = s.column_1 WHERE s.column_1 IS NULL'
+    );
+    PREPARE stmt FROM @b_only_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    SELECT CONCAT('Comparison of ', feed_a_name, ' and ', feed_b_name, ' completed. Check comparison_results table.') AS status_message;
+END$$
+
+---
+
+CREATE PROCEDURE execute_automated_tests()
+BEGIN
+    DECLARE row_count INT;
+
+    -- Test 1: Generate Feed 1
+    CALL create_test_data('Feed_1', 10, 10);
+    SELECT COUNT(*) INTO row_count FROM Feed_1;
+    IF row_count = 11 THEN
+        SELECT 'Test 1: Data Generation - PASSED' AS Test_Result;
+    ELSE
+        SELECT 'Test 1: Data Generation - FAILED' AS Test_Result;
+    END IF;
+
+    -- Test 2: Log Duplicates
+    TRUNCATE TABLE duplicates;
+    CALL find_and_log_duplicates('Feed_1');
+    SELECT COUNT(*) INTO row_count FROM duplicates WHERE table_name_source = 'Feed_1';
+    IF row_count = 1 THEN
+        SELECT 'Test 2: Duplicate Logging - PASSED' AS Test_Result;
+    ELSE
+        SELECT 'Test 2: Duplicate Logging - FAILED' AS Test_Result;
+    END IF;
+
+    -- Test 3: Remove Duplicates
+    CALL remove_duplicates_from_table('Feed_1');
+    SELECT COUNT(*) INTO row_count FROM Feed_1;
+    IF row_count = 10 THEN
+        SELECT 'Test 3: Duplicate Removal - PASSED' AS Test_Result;
+    ELSE
+        SELECT 'Test 3: Duplicate Removal - FAILED' AS Test_Result;
+    END IF;
+
+    -- Test 4: Verify No Duplicates
+    CALL check_for_duplicates('Feed_1');
+
+    -- Test 5: Compare Feeds
+    CALL create_test_data('Feed_2', 15, 15);
+    TRUNCATE TABLE comparison_results;
+    CALL compare_data_feeds('Feed_1', 'Feed_2');
+    SELECT COUNT(*) INTO row_count FROM comparison_results;
+    IF row_count > 0 THEN
+        SELECT 'Test 5: Feed Comparison - PASSED' AS Test_Result;
+    ELSE
+        SELECT 'Test 5: Feed Comparison - FAILED' AS Test_Result;
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+CALL execute_automated_tests();
