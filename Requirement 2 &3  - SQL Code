@@ -1,32 +1,119 @@
 DELIMITER //
 
+
 CREATE PROCEDURE `generate_data` (IN feed_name VARCHAR(50), IN num_rows INT)
 BEGIN
-    IF feed_name = 'Feed-1' THEN
-        -- Run the insertion logic for Feed-1
-        SELECT 'Generating Feed-1 data...';
-    ELSEIF feed_name = 'Feed-2' THEN
-        -- Run the insertion logic for Feed-2
-        SELECT 'Generating Feed-2 data...';
+    -- Drop the table if it exists to ensure a clean start
+    SET @drop_table_sql = CONCAT('DROP TABLE IF EXISTS `', feed_name, '`');
+    PREPARE drop_stmt FROM @drop_table_sql;
+    EXECUTE drop_stmt;
+    DEALLOCATE PREPARE drop_stmt;
+
+    -- Create and populate the specified table
+    IF feed_name = 'Feed-1' AND num_rows > 0 THEN
+        CREATE TABLE `Feed-1` (
+            `column_1` INT, `column_2` INT, `column_3` INT, `column_4` INT, `column_5` INT,
+            `column_6` INT, `column_7` INT, `column_8` INT, `column_9` INT, `column_10` INT
+        );
+        INSERT INTO `Feed-1`
+        SELECT
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2))
+        FROM
+            (WITH RECURSIVE numbers (n) AS (
+                SELECT 1
+                UNION ALL
+                SELECT n + 1 FROM numbers WHERE n < num_rows
+            ) SELECT n FROM numbers) AS a;
+    ELSEIF feed_name = 'Feed-2' AND num_rows > 0 THEN
+        CREATE TABLE `Feed-2` (
+            `column_1` INT, `column_2` INT, `column_3` INT, `column_4` INT, `column_5` INT,
+            `column_6` INT, `column_7` INT, `column_8` INT, `column_9` INT, `column_10` INT,
+            `column_11` INT, `column_12` INT, `column_13` INT, `column_14` INT, `column_15` INT
+        );
+        INSERT INTO `Feed-2`
+        SELECT
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2))
+        FROM
+            (WITH RECURSIVE numbers (n) AS (
+                SELECT 1
+                UNION ALL
+                SELECT n + 1 FROM numbers WHERE n < num_rows
+            ) SELECT n FROM numbers) AS a;
+    ELSEIF feed_name = 'Feed-3' AND num_rows > 0 THEN
+        CREATE TABLE `Feed-3` (
+            `column_1` INT, `column_2` INT, `column_3` INT, `column_4` INT, `column_5` INT,
+            `column_6` INT, `column_7` INT, `column_8` INT, `column_9` INT, `column_10` INT,
+            `column_11` INT, `column_12` INT, `column_13` INT, `column_14` INT, `column_15` INT,
+            `column_16` INT, `column_17` INT, `column_18` INT, `column_19` INT, `column_20` INT
+        );
+        INSERT INTO `Feed-3`
+        SELECT
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2)),
+            FLOOR(RAND() * (num_rows / 2)), FLOOR(RAND() * (num_rows / 2))
+        FROM
+            (WITH RECURSIVE numbers (n) AS (
+                SELECT 1
+                UNION ALL
+                SELECT n + 1 FROM numbers WHERE n < num_rows
+            ) SELECT n FROM numbers) AS a;
     END IF;
+    SELECT CONCAT('Data generation complete for ', feed_name, ' with ', num_rows, ' rows.');
 END //
 
 DELIMITER ;
 
--- Find duplicates in Feed-1
-SELECT *
+-- Req 3: Find duplicates in Feed-1
+SELECT 'Duplicates in Feed-1';
+SELECT
+    `column_1`, `column_2`, `column_3`, `column_4`, `column_5`,
+    `column_6`, `column_7`, `column_8`, `column_9`, `column_10`,
+    COUNT(*) AS `duplicate_count`
 FROM `Feed-1`
-GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`
+GROUP BY
+    `column_1`, `column_2`, `column_3`, `column_4`, `column_5`,
+    `column_6`, `column_7`, `column_8`, `column_9`, `column_10`
 HAVING COUNT(*) > 1;
 
--- Find duplicates in Feed-2
-SELECT *
+---
+
+SELECT 'Duplicates in Feed-2';
+SELECT
+    `column_1`, `column_2`, `column_3`, `column_4`, `column_5`,
+    `column_6`, `column_7`, `column_8`, `column_9`, `column_10`,
+    `column_11`, `column_12`, `column_13`, `column_14`, `column_15`,
+    COUNT(*) AS `duplicate_count`
 FROM `Feed-2`
-GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`
+GROUP BY
+    `column_1`, `column_2`, `column_3`, `column_4`, `column_5`,
+    `column_6`, `column_7`, `column_8`, `column_9`, `column_10`,
+    `column_11`, `column_12`, `column_13`, `column_14`, `column_15`
 HAVING COUNT(*) > 1;
 
--- Find duplicates in Feed-3
-SELECT *
+---
+
+SELECT 'Duplicates in Feed-3';
+SELECT
+    `column_1`, `column_2`, `column_3`, `column_4`, `column_5`,
+    `column_6`, `column_7`, `column_8`, `column_9`, `column_10`,
+    `column_11`, `column_12`, `column_13`, `column_14`, `column_15`,
+    `column_16`, `column_17`, `column_18`, `column_19`, `column_20`,
+    COUNT(*) AS `duplicate_count`
 FROM `Feed-3`
-GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`, `column_16`, `column_17`, `column_18`, `column_19`, `column_20`
+GROUP BY
+    `column_1`, `column_2`, `column_3`, `column_4`, `column_5`,
+    `column_6`, `column_7`, `column_8`, `column_9`, `column_10`,
+    `column_11`, `column_12`, `column_13`, `column_14`, `column_15`,
+    `column_16`, `column_17`, `column_18`, `column_19`, `column_20`
 HAVING COUNT(*) > 1;
