@@ -1,0 +1,16 @@
+DELIMITER //
+
+CREATE PROCEDURE `generate_data` (IN feed_name VARCHAR(50), IN num_rows INT)
+BEGIN
+    -- This is a conceptual example. Standard SQL does not allow dynamic table names.
+    -- You would need to create a separate stored procedure for each feed.
+    IF feed_name = 'Feed-1' THEN
+        -- Run the insertion logic for Feed-1
+        SELECT 'Generating Feed-1 data...';
+    ELSEIF feed_name = 'Feed-2' THEN
+        -- Run the insertion logic for Feed-2
+        SELECT 'Generating Feed-2 data...';
+    END IF;
+END //
+
+DELIMITER ;
