@@ -6,4 +6,4 @@ The document outlines a hands-on, end-to-end data handling project focused on SQ
 
 **System Requirements**-To complete the assignment we have used 
 Database Server: MySQL version 8.3.0 or a compatible version.
-Client Tool: Any standard SQL client is suitable, such as MySQL Workbench, DBeaver, or an online SQL compiler.
+
