@@ -29,3 +29,44 @@ WHERE (`column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `
 )
 INTO OUTFILE '/var/lib/mysql-files/duplicates_Feed-3.csv'
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+-- For Feed-1: Correctly deletes extra duplicates, leaving one unique record
+CREATE TEMPORARY TABLE `temp_dupes` AS
+SELECT
+    `column_1`, `column_2`, `column_3`, `column_4`, `column_5`,
+    `column_6`, `column_7`, `column_8`, `column_9`, `column_10`,
+    COUNT(*) as c,
+    MIN(t.row_id) as min_id
+FROM `Feed-1` t
+GROUP BY
+    `column_1`, `column_2`, `column_3`, `column_4`, `column_5`,
+    `column_6`, `column_7`, `column_8`, `column_9`, `column_10`
+HAVING c > 1;
+DELETE t1 FROM `Feed-1` t1
+INNER JOIN `temp_dupes` t2 ON
+    t1.column_1 = t2.column_1 AND t1.column_2 = t2.column_2 AND t1.column_3 = t2.column_3 AND
+    t1.column_4 = t2.column_4 AND t1.column_5 = t2.column_5 AND t1.column_6 = t2.column_6 AND
+    t1.column_7 = t2.column_7 AND t1.column_8 = t2.column_8 AND t1.column_9 = t2.column_9 AND
+    t1.column_10 = t2.column_10 AND t1.row_id > t2.min_id;
+
+DROP TEMPORARY TABLE `temp_dupes`;
+SELECT *
+FROM `Feed-2`
+WHERE (`column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`) IN (
+    SELECT `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`
+    FROM `Feed-2`
+    GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`
+    HAVING COUNT(*) > 1
+)
+INTO OUTFILE '/var/lib/mysql-files/duplicates_Feed-2.csv'
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+SELECT *
+FROM `Feed-3`
+WHERE (`column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`, `column_16`, `column_17`, `column_18`, `column_19`, `column_20`) IN (
+    SELECT `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`, `column_16`, `column_17`, `column_18`, `column_19`, `column_20`
+    FROM `Feed-3`
+    GROUP BY `column_1`, `column_2`, `column_3`, `column_4`, `column_5`, `column_6`, `column_7`, `column_8`, `column_9`, `column_10`, `column_11`, `column_12`, `column_13`, `column_14`, `column_15`, `column_16`, `column_17`, `column_18`, `column_19`, `column_20`
+    HAVING COUNT(*) > 1
+)
+INTO OUTFILE '/var/lib/mysql-files/duplicates_Feed-3.csv'
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+   
